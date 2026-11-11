@@ -50,6 +50,7 @@ fi
 git -C "$tools_root/vcpkg" checkout --detach 9e593bb18ea69cc5095e012465dcd675a822ed0d
 "$tools_root/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
 export VCPKG_ROOT="$tools_root/vcpkg"
+export VCPKG_OVERLAY_TRIPLETS="$project_root/tools/macos/triplets"
 mkdir -p "$tools_root/vcpkg-binary-cache"
 export VCPKG_BINARY_SOURCES="clear;files,$tools_root/vcpkg-binary-cache,readwrite"
 if [ "$(uname -m)" = arm64 ]; then triplet=arm64-osx; else triplet=x64-osx; fi

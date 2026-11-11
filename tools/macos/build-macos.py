@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -40,6 +42,10 @@ def environment(arch, profile):
         'PUB_CACHE': str(TOOLS / 'pub-cache'),
         'VCPKG_ROOT': str(TOOLS / 'vcpkg'),
         'VCPKG_DEFAULT_TRIPLET': 'arm64-osx' if arch == 'arm64' else 'x64-osx',
+        'VCPKG_DEFAULT_HOST_TRIPLET': 'arm64-osx' if arch == 'arm64' else 'x64-osx',
+        'VCPKG_OVERLAY_TRIPLETS': str(ROOT / 'tools/macos/triplets'),
+        'VCPKG_MAX_CONCURRENCY': '8',
+        'VCPKG_BINARY_SOURCES': f'clear;files,{TOOLS / "vcpkg-binary-cache"},readwrite',
         'LIBCLANG_PATH': '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib',
         'MACOSX_DEPLOYMENT_TARGET': '12.3',
         'FLUTTER_XCODE_MACOSX_DEPLOYMENT_TARGET': '12.3',
@@ -52,15 +58,81 @@ def environment(arch, profile):
     env['PATH'] = os.pathsep.join([str(TOOLS / 'cargo/bin'), str(TOOLS / 'flutter/bin'),
                                   str(TOOLS / 'native-tools/bin'), env.get('PATH', '')])
     env.pop('MH_CONTROLLER_PROFILE', None)
+    # Keep build-machine identities out of Rust panic locations and native code.
+    # Encoded flags preserve paths containing spaces and any caller-supplied flags.
+    rustflags = (list(filter(None, env.get('CARGO_ENCODED_RUSTFLAGS', '').split('\x1f')))
+                 if 'CARGO_ENCODED_RUSTFLAGS' in env else shlex.split(env.get('RUSTFLAGS', '')))
+    mappings = [(Path.home(), '/build/user-root'), (ROOT, '/build/mh-client')]
+    rustflags.extend(f'--remap-path-prefix={source}={target}' for source, target in mappings)
+    env['CARGO_ENCODED_RUSTFLAGS'] = '\x1f'.join(rustflags)
+    env.pop('RUSTFLAGS', None)
+    native_flags = [f'-ffile-prefix-map={source}={target}' for source, target in mappings]
+    for key in ('CFLAGS', 'CXXFLAGS'):
+        env[key] = shlex.join(shlex.split(env.get(key, '')) + native_flags)
+    for key in ('OTHER_CFLAGS', 'OTHER_CPLUSPLUSFLAGS'):
+        env[f'FLUTTER_XCODE_{key}'] = '$(inherited) ' + shlex.join(native_flags)
+    swift_flags = [arg for source, target in reversed(mappings)
+                   for arg in ('-file-prefix-map', f'{source}={target}',
+                               '-debug-prefix-map', f'{source}={target}')]
+    env['FLUTTER_XCODE_OTHER_SWIFT_FLAGS'] = '$(inherited) ' + shlex.join(swift_flags)
     if profile is not None:
         env['MH_CONTROLLER_PROFILE'] = json.dumps(profile)
     return env
 
 
 def flutter_build_args(profile):
-    return ['flutter', 'build', 'macos', '--release', '--dart-define=MH_DESKTOP=true',
+    return ['flutter', 'build', 'macos', '--release', '--no-pub', '--dart-define=MH_DESKTOP=true',
+            f'--split-debug-info={ROOT / ".local/macos-symbols"}',
             '--dart-define=MH_CONTROLLER=true',
             f'--dart-define=MH_CONTROLLER_CONFIGURED={str(profile is not None).lower()}']
+
+
+def register_generated_dart_package():
+    # Flutter 3.24 embeds the registrant URI for runtime plugin lookup even when
+    # debug info is split out. Give that generated library a stable package URI,
+    # instead of changing the binary string or obfuscating application code.
+    config_path = ROOT / 'flutter/.dart_tool/package_config.json'
+    config = json.loads(config_path.read_text())
+    name = 'mh_build_generated'
+    config['packages'] = [p for p in config['packages'] if p['name'] != name]
+    config['packages'].append({'name': name, 'rootUri': 'flutter_build/',
+                               'packageUri': '', 'languageVersion': '3.0'})
+    config_path.write_text(json.dumps(config, indent=2) + '\n')
+    # Flutter 3.24's kernel stamp does not track the package-config mapping.
+    # Invalidate that generated cache so an earlier file URI is not reused.
+    for stamp in (config_path.parent / 'flutter_build').glob('*/kernel_snapshot*.stamp'):
+        stamp.unlink()
+    # Xcode's outer script phase has its own cache. Its declared input must also
+    # change, otherwise it never invokes Flutter to notice the missing stamp.
+    tripwire = ROOT / 'flutter/macos/Flutter/ephemeral/tripwire'
+    tripwire.parent.mkdir(parents=True, exist_ok=True)
+    tripwire.touch()
+
+
+def strip_build_symbols(app, env):
+    for path in sorted(app.rglob('*')):
+        if path.is_file() and not path.is_symlink():
+            kind = subprocess.check_output(['file', '-b', str(path)], text=True)
+            if 'Mach-O' in kind:
+                # Retain exported symbols used by Flutter FFI and plugin loading.
+                run(['xcrun', 'strip', '-S', '-x', path], env)
+
+
+def verify_build_privacy(app):
+    """Fail before packaging if a personal build path remains, including in binaries."""
+    personal_path = re.compile(rb'(?i)(?:/(?:Users|home)/[^/\x00\r\n ]+/|[A-Z]:[\\/]+Users[\\/]+[^\\/\x00\r\n ]+[\\/])')
+    leaked = []
+    for path in sorted(app.rglob('*')):
+        if path.is_symlink():
+            if os.path.isabs(os.readlink(path)):
+                leaked.append(path.relative_to(app).as_posix() + ' (absolute symlink)')
+        elif path.is_file():
+            data = path.read_bytes()
+            # UTF-16 strings can also appear in native resources.
+            if personal_path.search(data) or personal_path.search(data.replace(b'\x00', b'')):
+                leaked.append(path.relative_to(app).as_posix())
+    if leaked:
+        raise RuntimeError('Personal build paths remain in: ' + ', '.join(leaked))
 
 
 def prepare_icon(env):
@@ -112,7 +184,9 @@ def package(version, arch, profile, env):
         run(['ditto', app, bundled], env)
         shutil.copy2(ROOT / 'target/release/service', bundled / 'Contents/MacOS/service')
         shutil.copy2(ROOT / 'LICENCE', bundled / 'Contents/Resources/LICENSE.txt')
+        strip_build_symbols(bundled, env)
         sign_local_app(bundled, env)
+        verify_build_privacy(bundled)
         run(['lipo', '-verify_arch', arch, bundled / 'Contents/MacOS/MH'], env)
         image_root = staging / 'image'
         image_root.mkdir()
@@ -163,7 +237,24 @@ def main():
             raise RuntimeError(f'Missing {tool}; run tools/macos/prepare-macos.sh first')
     run([sys.executable, ROOT / 'tools/macos/prepare-bridge.py'], env)
     prepare_icon(env)
+    # Refresh dependency ABIs when macOS privacy flags change, including on an
+    # existing checkout that was originally prepared without path remapping.
+    (TOOLS / 'vcpkg-binary-cache').mkdir(exist_ok=True)
+    run([TOOLS / 'vcpkg/vcpkg', 'install', '--triplet', env['VCPKG_DEFAULT_TRIPLET'],
+         '--host-triplet', env['VCPKG_DEFAULT_HOST_TRIPLET'],
+         f'--x-install-root={TOOLS / "vcpkg/installed"}'], env)
+    native_status = digest(TOOLS / 'vcpkg/installed/vcpkg/status')
+    native_marker = ROOT / 'target/mh-macos-vcpkg.sha256'
+    if not native_marker.exists() or native_marker.read_text().strip() != native_status:
+        # These Rust crates embed vcpkg archives in their rlibs. Cargo does not
+        # reliably notice replacement of external static libraries by itself.
+        run(['cargo', 'clean', '--release', '-p', 'scrap', '-p', 'hwcodec',
+             '-p', 'magnum-opus', '-p', 'rustdesk'], env)
+        native_marker.parent.mkdir(exist_ok=True)
+        native_marker.write_text(native_status + '\n')
     run(['cargo', 'build', '--locked', '--release', '--features', FEATURES, '--lib', '--bin', 'service'], env)
+    run(['flutter', 'pub', 'get'], env, ROOT / 'flutter')
+    register_generated_dart_package()
     run(flutter_build_args(profile), env, ROOT / 'flutter')
     package(args.version, arch, profile, env)
 
