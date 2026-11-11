@@ -27,8 +27,14 @@ try {
     if ($Stage -in @('ui','all')) {
         Push-Location flutter
         try {
-            & flutter build windows --release --dart-define=MH_DESKTOP=true "--dart-define=MH_CONTROLLER=$controllerFlag"
+            & flutter pub get
             Assert-Build
+            & python "$PSScriptRoot/../prepare-dart-paths.py"
+            Assert-Build
+            $symbolDirectory = Join-Path $projectRoot ('.local/debug-symbols/windows/' + [guid]::NewGuid().ToString('N'))
+            & flutter build windows --no-pub --release --obfuscate "--split-debug-info=$symbolDirectory" --dart-define=MH_DESKTOP=true "--dart-define=MH_CONTROLLER=$controllerFlag"
+            Assert-Build
+            @{ directory = $symbolDirectory } | ConvertTo-Json | Set-Content -Encoding UTF8 "$projectRoot/.local/debug-symbols/windows/latest.json"
         } finally { Pop-Location }
         Copy-Item target/release/deps/dylib_virtual_display.dll flutter/build/windows/x64/runner/Release/ -Force
     }

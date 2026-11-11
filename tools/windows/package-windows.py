@@ -14,6 +14,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 from release_layout import release_dir
+from build_privacy import check_tree, inspect_bytes
 
 SOURCE = ROOT
 VERSION = os.environ.get('MH_PACKAGE_VERSION', '1.5.1-mh.6-controller-test')
@@ -40,6 +41,7 @@ def stage():
                  'dylib_virtual_display.dll', 'data/app.so'):
         if not (release / name).is_file():
             raise FileNotFoundError(f'Missing build output: {name}')
+    check_tree(release, exclude_suffixes=('.pdb', '.lib', '.exp'))
     if RELEASE.exists() or DOWNLOAD.exists():
         raise FileExistsError('Version directory already exists; select a new version without overwriting history')
     RELEASE.mkdir(parents=True)
@@ -83,10 +85,18 @@ def source_bundle(output):
 
 def finalize():
     portable = SOURCE / 'target/release/rustdesk-portable-packer.exe'
+    if inspect_bytes(portable.read_bytes()):
+        raise ValueError('Portable launcher contains a local build path')
     output_exe = RELEASE / (NAME + '.exe')
     shutil.copy2(portable, output_exe)
     source_zip = RELEASE / (NAME + '-source.zip')
     source_bundle(source_zip)
+    symbol_record = ROOT / '.local/debug-symbols/windows/latest.json'
+    if symbol_record.exists():
+        symbols = Path(json.loads(symbol_record.read_text('utf-8-sig'))['directory']).resolve()
+        if not symbols.is_relative_to(ROOT / '.local/debug-symbols/windows'):
+            raise ValueError('Unexpected local symbol directory')
+        shutil.copytree(symbols, RELEASE / 'debug-symbols')
     files = {p.relative_to(DIST).as_posix(): digest(p)
              for p in sorted(DIST.rglob('*')) if p.is_file()}
     manifest = {

@@ -25,3 +25,11 @@ $devCmd = Join-Path $vsPath 'Common7/Tools/VsDevCmd.bat'
 if ($LASTEXITCODE -ne 0) { throw 'Failed to initialize the C++ build environment.' }
 # VsDevCmd points VCPKG_ROOT at its own optional copy; use our pinned dependency set.
 $env:VCPKG_ROOT = Join-Path $toolsRoot 'vcpkg'
+
+# Apply to native libraries and the portable launcher in this process only.
+$privacyEnvironment = & python "$PSScriptRoot/../build_privacy.py" environment
+if ($LASTEXITCODE -ne 0) { throw 'Failed to prepare build path mapping.' }
+$privacyEnvironment = $privacyEnvironment | ConvertFrom-Json
+foreach ($property in $privacyEnvironment.PSObject.Properties) {
+    [Environment]::SetEnvironmentVariable($property.Name, [string]$property.Value, 'Process')
+}

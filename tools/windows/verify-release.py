@@ -9,6 +9,8 @@ import zipfile
 import brotli
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tools'))
+from build_privacy import check_tree, inspect_bytes
 
 
 def sha(data):
@@ -38,6 +40,7 @@ def verify(release):
     if (release / 'SHA256SUMS.txt').read_text('utf-8') != expected_text:
         raise ValueError('Text checksums differ from manifest')
     unpacked = release / 'unpacked'
+    check_tree(unpacked)
     manifest = json.loads((unpacked / 'build-manifest.json').read_text('utf-8'))
     for name, expected in manifest['files'].items():
         path = (unpacked / name).resolve()
@@ -58,6 +61,8 @@ def verify(release):
         raise ValueError('Download EXE differs from verified portable application')
     if (unpacked / 'LICENSE.txt').read_bytes() != (ROOT / 'LICENCE').read_bytes():
         raise ValueError('Embedded license differs from repository license')
+    if inspect_bytes(portable):
+        raise ValueError('Portable launcher contains a local build path')
     if not portable.startswith(b'MZ'):
         raise ValueError('Portable executable is not a Windows PE file')
     # The packer embeds this exact payload. Verify every decompressed member.
