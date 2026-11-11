@@ -1,0 +1,107 @@
+/build
+/target
+.vscode
+.idea
+.DS_Store
+.env
+libsciter-gtk.so
+src/ui/inline.rs
+extractor
+__pycache__
+src/version.rs
+*dmg
+*exe
+*tgz
+cert.pfx
+*.bak
+*png
+!flutter/assets/mh-icon.png
+!libs/portable/src/res/mh-label.png
+*svg
+*jpg
+sciter.dll
+**pdb
+src/bridge_generated.rs
+src/bridge_generated.io.rs
+*deb
+rustdesk
+*.cache
+# appimage
+appimage/AppDir
+appimage/*.AppImage
+appimage/appimage-build
+appimage/*.xz
+# flutter
+flutter/linux/build/**
+flutter/linux/cmake-build-debug/**
+# flatpak
+flatpak/.flatpak-builder/**
+flatpak/ccache/**
+flatpak/.flatpak-builder/build/**
+flatpak/.flatpak-builder/shared-modules/**
+flatpak/.flatpak-builder/shared-modules/*.tar.xz
+flatpak/.flatpak-builder/debian-binary
+flatpak/build/**
+flatpak/repo/**
+flatpak/*.flatpak
+# bridge file
+lib/generated_bridge.dart
+# vscode devcontainer
+.gitconfig
+.vscode-server/
+.ssh
+.devcontainer/.*
+# build cache in examples
+examples/**/target/
+# ===
+vcpkg_installed
+flutter/lib/generated_plugin_registrant.dart
+libsciter.dylib
+flutter/web/
+# libdrmtap is cloned at build time by build.py (not a submodule)
+/third_party/libdrmtap/
+# Local git worktrees
+.worktrees/
+
+# MH local build and private records
+/.cache/
+/.local/
+/dist/
+/PROGRESS.md
+!branding/
+!branding/mh-icon.png
+
+# Private configuration and signing material
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.keystore
+*.sqlite
+*.sqlite3
+id_rsa
+id_ed25519
+
+# Local assistant instructions and personal development state
+AGENTS.md
+AGENTS.local.md
+CLAUDE.md
+CLAUDE.local.md
+GEMINI.md
+PROGRESS.md
+.agents/
+.codex/
+.claude/
+.gemini/
+.cursor/
+.windsurf/
+.cursorrules
+.windsurfrules
+.github/copilot-instructions.md
+.github/instructions/
+
+# Local development notes; public documentation is under docs/user
+/docs/development/
+/docs/upstream/
+/docs/CODE_OF_CONDUCT*.md
+/docs/CONTRIBUTING*.md

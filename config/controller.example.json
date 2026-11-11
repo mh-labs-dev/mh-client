@@ -1,0 +1,8 @@
+{
+  "custom-rendezvous-server": "remote.example.com",
+  "relay-server": "remote.example.com",
+  "api-server": "https://remote.example.com",
+  "key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+  "allow-websocket": "Y",
+  "allow-insecure-tls-fallback": "N"
+}

@@ -1,0 +1,14 @@
+{
+  "project": "RustDesk",
+  "version": "1.5.1",
+  "repository": "https://github.com/rustdesk/rustdesk.git",
+  "commit": "23e5bb471a040d62f0a6ad52591fb30784265b73",
+  "hbb_common_commit": "fae47e024dd83cef6aaecde0aa7d11731df11649",
+  "rust": "1.75.0",
+  "flutter": "3.24.5",
+  "vcpkg_commit": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
+  "initial_release": "1.5.1-mh.5-controller-test",
+  "mh_platforms_validated": [
+    "windows-x64"
+  ]
+}

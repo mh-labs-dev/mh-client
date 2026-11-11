@@ -1,0 +1,13 @@
+{
+  "libs/hbb_common/tests/data/websocket-key.pem": {
+    "sha256": "95cf7a0a6890435c98bb3f644678d4fd20d80ff4a296d438a515802e233c6ec9",
+    "normalize_lf": true,
+    "rule": "private key",
+    "reason": "Unmodified upstream TLS fixture used by WebSocket tests; never use it for deployment."
+  },
+  "tools/windows/bridge/bridge-upstream.zip": {
+    "sha256": "15cb37d5b94554f1d5b965eae99de33219b5864b9aa633dbd65e53322eab9221",
+    "rule": "archive requires separate release review",
+    "reason": "Pinned upstream bridge input; provenance is documented beside the archive."
+  }
+}
