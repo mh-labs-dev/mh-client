@@ -118,35 +118,6 @@ pub use verified_update::{
     update_to_verified, VerifiedUpdateFile,
 };
 
-#[path = "mh_relay.rs"]
-mod mh_relay;
-
-pub fn mh_relay_server(advertised: String) -> String {
-    let selected = mh_relay::select_relay(
-        advertised.clone(),
-        Config::get_option("relay-server"),
-        option_env!("MH_CONTROLLER_PROFILE").is_some() && config::use_ws(),
-    );
-    if selected != advertised {
-        log::info!("MH controller relay endpoint: {}", selected);
-    }
-    selected
-}
-
-pub fn init_mh_brand() {
-    *config::APP_NAME.write().unwrap() = "MH".to_owned();
-    if let Some(profile) = option_env!("MH_CONTROLLER_PROFILE") {
-        *config::APP_NAME.write().unwrap() = "MH Test".to_owned();
-        match serde_json::from_str::<std::collections::HashMap<String, String>>(profile) {
-            Ok(settings) => config::DEFAULT_SETTINGS.write().unwrap().extend(settings),
-            Err(err) => log::error!("Invalid controller build profile: {}", err),
-        }
-        let mut settings = config::HARD_SETTINGS.write().unwrap();
-        settings.insert("conn-type".to_owned(), "outgoing".to_owned());
-        settings.insert("disable-tcp-listen".to_owned(), "Y".to_owned());
-    }
-}
-
 pub const FLUTTER_RUNNER_WIN32_WINDOW_CLASS: &'static str = "FLUTTER_RUNNER_WIN32_WINDOW"; // main window, install window
 pub const EXPLORER_EXE: &'static str = "explorer.exe";
 pub const SET_FOREGROUND_WINDOW: &'static str = "SET_FOREGROUND_WINDOW";

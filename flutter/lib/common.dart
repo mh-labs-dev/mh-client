@@ -47,9 +47,10 @@ import 'package:flutter_hbb/native/common.dart'
     if (dart.library.html) 'package:flutter_hbb/web/common.dart';
 import 'package:flutter_hbb/utils/http_service.dart' as http;
 
+import 'common/mh_config.dart';
+export 'common/mh_config.dart';
+
 final globalKey = GlobalKey<NavigatorState>();
-// Set only by the Windows MH build entry point; other platforms keep upstream UI.
-const bool isMhWindows = bool.fromEnvironment('MH_WINDOWS');
 final navigationBarKey = GlobalKey();
 
 final isAndroid = isAndroid_;
@@ -250,17 +251,17 @@ class ColorThemeExtension extends ThemeExtension<ColorThemeExtension> {
 class MyTheme {
   MyTheme._();
 
-  static const Color grayBg = Color(isMhWindows ? 0xFFF1F1F1 : 0xFFEFEFF2);
-  static const Color accent = Color(isMhWindows ? 0xFF737373 : 0xFF0071FF);
-  static const Color accent50 = Color(isMhWindows ? 0x77737373 : 0x770071FF);
-  static const Color accent80 = Color(isMhWindows ? 0xAA737373 : 0xAA0071FF);
+  static const Color grayBg = Color(isMhDesktop ? 0xFFF1F1F1 : 0xFFEFEFF2);
+  static const Color accent = Color(isMhDesktop ? 0xFF737373 : 0xFF0071FF);
+  static const Color accent50 = Color(isMhDesktop ? 0x77737373 : 0x770071FF);
+  static const Color accent80 = Color(isMhDesktop ? 0xAA737373 : 0xAA0071FF);
   static const Color canvasColor = Color(0xFF212121);
   static const Color border = Color(0xFFCCCCCC);
-  static const Color idColor = Color(isMhWindows ? 0xFF737373 : 0xFF00B6F0);
+  static const Color idColor = Color(isMhDesktop ? 0xFF737373 : 0xFF00B6F0);
   static const Color darkGray = Color.fromARGB(255, 148, 148, 148);
-  static const Color cmIdColor = Color(isMhWindows ? 0xFF737373 : 0xFF21790B);
+  static const Color cmIdColor = Color(isMhDesktop ? 0xFF737373 : 0xFF21790B);
   static const Color dark = Colors.black87;
-  static const Color button = Color(isMhWindows ? 0xFF242424 : 0xFF2C8CFF);
+  static const Color button = Color(isMhDesktop ? 0xFF242424 : 0xFF2C8CFF);
   static const Color hoverBorder = Color(0xFF999999);
 
   // ListTile
@@ -454,7 +455,7 @@ class MyTheme {
         style:
             MenuStyle(backgroundColor: MaterialStatePropertyAll(Colors.white))),
     colorScheme: ColorScheme.light(
-        primary: isMhWindows ? Colors.black87 : Colors.blue,
+        primary: isMhDesktop ? Colors.black87 : Colors.blue,
         secondary: accent, background: grayBg),
     popupMenuTheme: PopupMenuThemeData(
         color: Colors.white,
@@ -474,9 +475,9 @@ class MyTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: false,
     brightness: Brightness.dark,
-    hoverColor: Color(isMhWindows ? 0xFF2D2D2D : 0xFF2D2E35),
-    scaffoldBackgroundColor: Color(isMhWindows ? 0xFF181818 : 0xFF18191E),
-    dialogBackgroundColor: Color(isMhWindows ? 0xFF181818 : 0xFF18191E),
+    hoverColor: Color(isMhDesktop ? 0xFF2D2D2D : 0xFF2D2E35),
+    scaffoldBackgroundColor: Color(isMhDesktop ? 0xFF181818 : 0xFF18191E),
+    dialogBackgroundColor: Color(isMhDesktop ? 0xFF181818 : 0xFF18191E),
     appBarTheme: AppBarTheme(
       shadowColor: Colors.transparent,
     ),
@@ -486,14 +487,14 @@ class MyTheme {
         borderRadius: BorderRadius.circular(18.0),
         side: BorderSide(
           width: 1,
-          color: Color(isMhWindows ? 0xFF242424 : 0xFF24252B),
+          color: Color(isMhDesktop ? 0xFF242424 : 0xFF24252B),
         ),
       ),
     ),
     scrollbarTheme: scrollbarThemeDark,
     inputDecorationTheme: (isDesktop || isWebDesktop)
         ? InputDecorationTheme(
-            fillColor: Color(isMhWindows ? 0xFF242424 : 0xFF24252B),
+            fillColor: Color(isMhDesktop ? 0xFF242424 : 0xFF24252B),
             filled: true,
             isDense: true,
             border: OutlineInputBorder(
@@ -512,7 +513,7 @@ class MyTheme {
         color: accent80,
       ),
     ),
-    cardColor: Color(isMhWindows ? 0xFF242424 : 0xFF24252B),
+    cardColor: Color(isMhDesktop ? 0xFF242424 : 0xFF24252B),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     tabBarTheme: const TabBarTheme(
       labelColor: Colors.white70,
@@ -546,7 +547,7 @@ class MyTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        backgroundColor: Color(isMhWindows ? 0xFF242424 : 0xFF24252B),
+        backgroundColor: Color(isMhDesktop ? 0xFF242424 : 0xFF24252B),
         side: BorderSide(color: Colors.white12, width: 0.5),
         disabledForegroundColor: Colors.white70,
         foregroundColor: Colors.white70,
@@ -563,9 +564,9 @@ class MyTheme {
         style: MenuStyle(
             backgroundColor: MaterialStatePropertyAll(Color(0xFF121212)))),
     colorScheme: ColorScheme.dark(
-      primary: isMhWindows ? Colors.white70 : Colors.blue,
+      primary: isMhDesktop ? Colors.white70 : Colors.blue,
       secondary: accent,
-      background: Color(isMhWindows ? 0xFF242424 : 0xFF24252B),
+      background: Color(isMhDesktop ? 0xFF242424 : 0xFF24252B),
     ),
     popupMenuTheme: PopupMenuThemeData(
         shape: RoundedRectangleBorder(
@@ -3762,7 +3763,7 @@ const _kLightLogoAsset = 'assets/logo_light.png';
 const _kDarkLogoAsset = 'assets/logo_dark.png';
 
 List<String> _logoAssetCandidatesForBrightness(Brightness brightness) {
-  if (isMhWindows) return ['assets/mh-icon.png'];
+  if (isMhDesktop) return ['assets/mh-icon.png'];
   return brightness == Brightness.dark
       ? [_kDarkLogoAsset, _kDefaultLogoAsset]
       : [_kLightLogoAsset, _kDefaultLogoAsset];
@@ -3826,7 +3827,7 @@ class _LogoState extends State<_Logo> {
 Widget loadLogo() => const _Logo();
 
 Widget loadIcon(double size) {
-  return Image.asset(isMhWindows ? 'assets/mh-icon.png' : 'assets/icon.png',
+  return Image.asset(isMhDesktop ? 'assets/mh-icon.png' : 'assets/icon.png',
       width: size,
       height: size,
       errorBuilder: (ctx, error, stackTrace) => SvgPicture.asset(

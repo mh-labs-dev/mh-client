@@ -33,7 +33,7 @@ class DesktopHomePage extends StatefulWidget {
   State<DesktopHomePage> createState() => _DesktopHomePageState();
 }
 
-const borderColor = Color(isMhWindows ? 0xFF737373 : 0xFF2F65BA);
+const borderColor = Color(isMhDesktop ? 0xFF737373 : 0xFF2F65BA);
 
 class _DesktopHomePageState extends State<DesktopHomePage>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
@@ -59,7 +59,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (isMhWindows && const bool.fromEnvironment('MH_CONTROLLER')) {
+    if (isMhController) {
       return const MhControllerPage();
     }
     final isIncomingOnly = bind.isIncomingOnly();
@@ -616,8 +616,8 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  Color(isMhWindows ? 0xFF363636 : 0xFFE242BC),
-                  Color(isMhWindows ? 0xFF505050 : 0xFFF4727C),
+                  Color(isMhDesktop ? 0xFF363636 : 0xFFE242BC),
+                  Color(isMhDesktop ? 0xFF505050 : 0xFFF4727C),
                 ],
               )),
               padding: EdgeInsets.all(20),

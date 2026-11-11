@@ -26,7 +26,7 @@ try {
         Push-Location flutter
         try {
             $controllerFlag = if ($ControllerProfile) { 'true' } else { 'false' }
-            & flutter build windows --release --dart-define=MH_WINDOWS=true "--dart-define=MH_CONTROLLER=$controllerFlag"
+            & flutter build windows --release --dart-define=MH_DESKTOP=true "--dart-define=MH_CONTROLLER=$controllerFlag"
             Assert-Build
         } finally { Pop-Location }
         Copy-Item target/release/deps/dylib_virtual_display.dll flutter/build/windows/x64/runner/Release/ -Force

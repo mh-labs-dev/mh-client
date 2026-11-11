@@ -2633,7 +2633,7 @@ class _AboutState extends State<_About> {
                   ).marginSymmetric(vertical: 4.0)),
               Container(
                 decoration: const BoxDecoration(
-                    color: Color(isMhWindows ? 0xFF242424 : 0xFF2c8cff)),
+                    color: Color(isMhDesktop ? 0xFF242424 : 0xFF2c8cff)),
                 padding:
                     const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
                 child: SelectionArea(

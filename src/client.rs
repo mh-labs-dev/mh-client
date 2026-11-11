@@ -1859,8 +1859,8 @@ impl Client {
         ipv4: bool,
     ) -> ResultType<Stream> {
         // The proxy's address family does not constrain the relay target.
-        #[cfg(windows)]
-        let relay_server = crate::platform::windows::mh_relay_server(relay_server);
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        let relay_server = crate::mh::relay_server(relay_server);
         let relay_server = check_port(relay_server, RELAY_PORT);
         let use_ws_proxy = Config::is_proxy() && is_ws_endpoint(&check_ws(&relay_server));
         let mut conn = connect_tcp(

@@ -121,8 +121,8 @@ impl Drop for SimpleCallOnReturn {
 }
 
 pub fn global_init() -> bool {
-    #[cfg(target_os = "windows")]
-    crate::platform::windows::init_mh_brand();
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    crate::mh::init();
     #[cfg(all(target_os = "linux", feature = "drm"))]
     crate::platform::linux::dispatch_wayland_display_probe();
     #[cfg(target_os = "linux")]
