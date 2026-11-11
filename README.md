@@ -6,7 +6,7 @@ MH is a remote Mac controller modified from [RustDesk 1.5.1](https://github.com/
 
 MH provides account login, a Mac device list and remote desktop connections. Windows x64 and macOS arm64 builds use the same controller interface. Access requires an account and an assigned Mac on a Pro Server.
 
-[Usage](docs/user/en/USAGE.md) · [Release notes](docs/user/releases/1.5.1-mh.10-preview.md) · [macOS build](tools/macos/README.md)
+## [Release](https://github.com/mh-labs-dev/mh-client/releases)
 
 ## Dependencies
 

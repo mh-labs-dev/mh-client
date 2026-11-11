@@ -6,7 +6,7 @@ MH 是基于 [RustDesk 1.5.1](https://github.com/rustdesk/rustdesk) 修改的远
 
 MH 提供账号登录、Mac 设备列表和远程桌面连接。Windows x64 与 macOS arm64 构建使用同一控制端界面。使用需要 Pro Server 账号及分配的 Mac。
 
-[使用说明](USAGE.md) · [版本说明](../releases/1.5.1-mh.10-preview.md) · [macOS 构建](../../../tools/macos/README.md)
+## [Release](https://github.com/mh-labs-dev/mh-client/releases)
 
 ## Dependencies
 
