@@ -30,7 +30,7 @@ def main():
     check(not (ROOT / 'libs/hbb_common/.git/objects/info/alternates').exists(), 'Submodule objects depend on another local repository')
     check(sha(ROOT / 'tools/windows/bridge/bridge-upstream.zip') ==
           '15cb37d5b94554f1d5b965eae99de33219b5864b9aa633dbd65e53322eab9221', 'Bridge input checksum mismatch')
-    for path in ('.local/probe.json', '.cache/probe', 'dist/probe.exe', 'PROGRESS.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.codex/probe', 'docs/development/probe.md', 'target/probe'):
+    for path in ('.local/probe.json', '.cache/probe', 'dist/probe.exe', 'PROGRESS.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.codex/probe', 'docs/development/probe.md', 'target/probe', 'release/windows/test/x64/probe.zip', 'release/macos/test/arm64/MH.app/probe', 'release/ios/test/arm64/probe.ipa', 'release/android/test/universal/probe.apk'):
         check(subprocess.run(['git', 'check-ignore', '-q', path], cwd=ROOT).returncode == 0, f'Local path is not ignored: {path}')
     visible = set(git('ls-files', '--cached', '--others', '--exclude-standard', '-z').split('\0'))
     for path in visible:
@@ -60,7 +60,9 @@ def main():
                     continue
                 check((file.parent / link.split('#')[0]).exists(), f'Broken document link: {rel} -> {link}')
     release_files = 0
-    for manifest in (ROOT / 'dist').glob('*/*-sha256.json'):
+    manifests = list((ROOT / 'dist').glob('*/*-sha256.json'))
+    manifests += list((ROOT / 'release').glob('*/*/*/*-sha256.json'))
+    for manifest in manifests:
         checksums = json.loads(manifest.read_text(encoding='utf-8'))
         for name, expected in checksums.items():
             path = manifest.parent / name

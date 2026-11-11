@@ -46,6 +46,7 @@ class _MhControllerPageState extends State<MhControllerPage> {
   }
 
   Future<void> _login() async {
+    if (!isMhControllerConfigured) return;
     if (_busy) return;
     if (_username.text.trim().isEmpty || _password.text.isEmpty) {
       setState(() => _error = '请输入用户名和密码。');
@@ -196,9 +197,13 @@ class _MhControllerPageState extends State<MhControllerPage> {
                     const SizedBox(height: 28),
                   ],
                   if (!loggedIn) ...[
+                    if (!isMhControllerConfigured) ...[
+                      const Text('服务配置待就绪，暂不可登录。'),
+                      const SizedBox(height: 16),
+                    ],
                     TextField(
                         controller: _username,
-                        enabled: !_busy,
+                        enabled: !_busy && isMhControllerConfigured,
                         autofocus: true,
                         decoration: const InputDecoration(
                             labelText: '用户名', border: OutlineInputBorder()),
@@ -206,7 +211,7 @@ class _MhControllerPageState extends State<MhControllerPage> {
                     const SizedBox(height: 16),
                     TextField(
                         controller: _password,
-                        enabled: !_busy,
+                        enabled: !_busy && isMhControllerConfigured,
                         obscureText: true,
                         decoration: const InputDecoration(
                             labelText: '密码', border: OutlineInputBorder()),
@@ -215,7 +220,9 @@ class _MhControllerPageState extends State<MhControllerPage> {
                     SizedBox(
                         height: 50,
                         child: ElevatedButton(
-                            onPressed: _busy ? null : _login,
+                            onPressed: _busy || !isMhControllerConfigured
+                                ? null
+                                : _login,
                             child: Text(_busy ? '正在登录…' : '登录',
                                 style: const TextStyle(fontSize: 18)))),
                   ] else ...[

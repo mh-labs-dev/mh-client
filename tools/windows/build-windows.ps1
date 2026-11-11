@@ -2,6 +2,8 @@
 param([ValidateSet('native','ui','all')][string]$Stage = 'all', [string]$ControllerProfile)
 . "$PSScriptRoot/windows-env.ps1"
 $sourceRoot = $projectRoot
+$controllerFlag = if ($ControllerProfile) { 'true' } else { 'false' }
+$env:MH_CONTROLLER = $controllerFlag
 Remove-Item Env:MH_CONTROLLER_PROFILE -ErrorAction SilentlyContinue
 if ($ControllerProfile) {
     & python "$PSScriptRoot/controller-profile.py" validate $ControllerProfile
@@ -25,7 +27,6 @@ try {
     if ($Stage -in @('ui','all')) {
         Push-Location flutter
         try {
-            $controllerFlag = if ($ControllerProfile) { 'true' } else { 'false' }
             & flutter build windows --release --dart-define=MH_DESKTOP=true "--dart-define=MH_CONTROLLER=$controllerFlag"
             Assert-Build
         } finally { Pop-Location }

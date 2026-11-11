@@ -23,11 +23,16 @@ pub(crate) fn relay_server(advertised: String) -> String {
 pub(crate) fn init() {
     // Keep the established Windows names and configuration precedence on both platforms.
     *config::APP_NAME.write().unwrap() = "MH".to_owned();
-    if let Some(profile) = option_env!("MH_CONTROLLER_PROFILE") {
+    let profile = option_env!("MH_CONTROLLER_PROFILE");
+    // Product mode must not depend on whether the server configuration is ready.
+    // The profile still enables controller mode for existing Windows builds.
+    if profile.is_some() || option_env!("MH_CONTROLLER") == Some("true") {
         *config::APP_NAME.write().unwrap() = "MH Test".to_owned();
-        match serde_json::from_str::<std::collections::HashMap<String, String>>(profile) {
-            Ok(settings) => config::DEFAULT_SETTINGS.write().unwrap().extend(settings),
-            Err(err) => log::error!("Invalid controller build profile: {}", err),
+        if let Some(profile) = profile {
+            match serde_json::from_str::<std::collections::HashMap<String, String>>(profile) {
+                Ok(settings) => config::DEFAULT_SETTINGS.write().unwrap().extend(settings),
+                Err(err) => log::error!("Invalid controller build profile: {}", err),
+            }
         }
         let mut settings = config::HARD_SETTINGS.write().unwrap();
         settings.insert("conn-type".to_owned(), "outgoing".to_owned());

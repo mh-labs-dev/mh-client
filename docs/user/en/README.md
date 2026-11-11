@@ -4,7 +4,7 @@
 
 MH is a remote Mac controller modified from [RustDesk 1.5.1](https://github.com/rustdesk/rustdesk), licensed under [AGPL-3.0](../../../LICENCE).
 
-The Windows preview provides account login, a device list and a connection action. Sessions require an available Pro Server, enrolled Macs and appropriate permissions. The server is deployed separately. The current preview is available for Windows x64.
+The Windows preview provides account login, a device list and a connection action. Sessions require an available Pro Server, enrolled Macs and appropriate permissions. The server is deployed separately. A Windows x64 preview is available. macOS arm64 supports local controller-only preview builds; service configuration and live-session verification are still required.
 
 [Usage](USAGE.md) · [Release notes](../releases/1.5.1-mh.5-controller-test.md)
 
@@ -44,7 +44,23 @@ python tools/windows/controller-profile.py validate .local/controller-profile.js
 ./tools/windows/package-windows.ps1 -Version 1.5.1-mh.6-controller-test -ControllerProfile .local/controller-profile.json
 ```
 
-The version number is an example. Output is stored in `dist/<version>/`. `-ControllerProfile` enables the login-first controller. Rebuild both native code and UI when changing configuration or variants.
+The version number is an example. Output is stored in `release/windows/<version>/x64/`. `-ControllerProfile` enables the login-first controller. Rebuild both native code and UI when changing configuration or variants.
+
+## Shared MH desktop behavior
+
+Windows and macOS share the branding initialization, controller defaults and WebSocket relay policy in `src/mh/`, plus the existing Flutter theme, logos, login and device list. The native MH initialization is not enabled for iOS, Android or Linux.
+
+Desktop builds must configure both layers:
+
+- Flutter: `--dart-define=MH_DESKTOP=true` enables MH appearance. The legacy `MH_WINDOWS=true` flag remains supported.
+- Flutter: `--dart-define=MH_CONTROLLER=true` enables the login-first page within MH appearance; use `false` for ordinary MH builds.
+- Flutter: `MH_CONTROLLER_CONFIGURED=false` disables login in unconfigured previews; existing Windows builds default to enabled.
+- Rust: `MH_CONTROLLER=true` enables outgoing-only mode independently of server configuration.
+- Rust: `MH_CONTROLLER_PROFILE` contains the public profile JSON for controller builds; unset it for ordinary builds.
+
+The Windows build script sets these inputs together. Controller builds retain the `MH Test` configuration name, outgoing-only connections and disabled TCP listening. Ordinary builds retain the `MH` name. Validate profiles with `python tools/controller_profile.py validate <profile-path>`; the previous Windows validation command remains compatible.
+
+macOS builds always enable outgoing-only controller mode. Without a server profile, the login page is shown with login disabled; host ID, password and permissions panels are not shown. Builds use the shared inputs; see [build instructions](../../../tools/macos/README.md). All platform artifacts use the [release layout](../../../release/README.md). iOS and Android directories are placeholders.
 
 ## File structure
 

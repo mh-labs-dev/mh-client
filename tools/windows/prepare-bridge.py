@@ -54,7 +54,9 @@ def main():
                     '          ffi.Pointer<wire_uint_8_list>)>();',
                     '          ffi.Pointer<wire_uint_8_list>)>();')
                 text = text[:start] + section + text[end:]
-            (SOURCE / name).write_text(text, encoding='utf-8', newline='\n')
+            destination = SOURCE / name
+            if not destination.exists() or destination.read_text(encoding='utf-8') != text:
+                destination.write_text(text, encoding='utf-8', newline='\n')
             print(f'Restored {name}')
 
 

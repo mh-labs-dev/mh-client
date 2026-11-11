@@ -67,6 +67,9 @@ flutter/web/
 /.cache/
 /.local/
 /dist/
+# Track platform documentation, not local release artifacts.
+/release/*/*
+!/release/*/README.md
 /PROGRESS.md
 !branding/
 !branding/mh-icon.png

@@ -1,77 +1,77 @@
-"""Move flat build outputs into version directories without replacing files."""
+"""Move legacy Windows dist outputs into release/windows/version/x64 without overwrites."""
 import argparse
 import hashlib
-import json
 from pathlib import Path
 import re
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-PACKAGES = (ROOT / 'dist').resolve()
-RECORD = ROOT / '.local/client-tests/package-layout-migration.json'
+sys.path.insert(0, str(ROOT / 'tools'))
+from release_layout import release_dir
+
 PATTERN = re.compile(r'MH-([A-Za-z0-9][A-Za-z0-9.-]*)-windows-x64(?:(-source|-sha256)?\.(exe|zip|json))?')
 
 
-def checked(path):
-    resolved = path.resolve()
-    if resolved == PACKAGES or not resolved.is_relative_to(PACKAGES):
-        raise ValueError('Package move must stay inside dist')
-    return path
-
-
 def hashes(path):
-    checked(path)
     files = sorted(path.rglob('*')) if path.is_dir() else [path]
-    return {str(p.relative_to(path)) if path.is_dir() else '.':
-            hashlib.sha256(checked(p).read_bytes()).hexdigest()
-            for p in files if p.is_file()}
+    result = {}
+    for file in [path, *files]:
+        if file.is_symlink():
+            raise ValueError('Legacy output contains a symbolic link; refusing to move')
+    for file in files:
+        if file.is_file():
+            name = file.relative_to(path).as_posix() if path.is_dir() else '.'
+            result[name] = hashlib.sha256(file.read_bytes()).hexdigest()
+    return result
 
 
-def save(plan):
-    RECORD.parent.mkdir(parents=True, exist_ok=True)
-    temporary = RECORD.with_suffix('.tmp')
-    temporary.write_text(json.dumps(plan, indent=2), encoding='utf-8')
-    temporary.replace(RECORD)
-
-
-def main(apply):
-    if RECORD.exists():
-        plan = json.loads(RECORD.read_text(encoding='utf-8'))
-    else:
-        plan = []
-        for source in sorted(PACKAGES.iterdir()):
-            match = PATTERN.fullmatch(source.name)
-            if not match:
+def plan(root=ROOT):
+    root = Path(root).resolve()
+    legacy = root / 'dist'
+    if not legacy.exists():
+        return []
+    if legacy.is_symlink():
+        raise ValueError('Legacy dist must not be a symbolic link')
+    moves = []
+    for source in sorted(legacy.iterdir()):
+        match = PATTERN.fullmatch(source.name)
+        if match:
+            base = release_dir('windows', match[1], 'x64', root)
+            target = base / ('unpacked' if source.is_dir() else source.name)
+        elif source.is_dir():
+            # Only recognize a version directory with Windows artifacts for that version.
+            entries = list(source.iterdir())
+            artifacts = [PATTERN.fullmatch(p.name) for p in entries if p.name != 'unpacked']
+            if not artifacts or any(m is None or m[1] != source.name for m in artifacts):
                 continue
-            version = match[1]
-            target = PACKAGES / version / ('unpacked' if source.is_dir() else source.name)
-            checked(source)
-            checked(target)
-            if target.exists():
-                raise FileExistsError('Version destination already exists; refusing to merge')
-            plan.append({'source': str(source), 'target': str(target), 'hashes': hashes(source), 'moved': False})
-        if apply:
-            save(plan)
-    for item in plan:
-        source, target = checked(Path(item['source'])), checked(Path(item['target']))
-        if not apply:
-            print(f'{source.name} -> {target.relative_to(PACKAGES)}')
+            target = release_dir('windows', source.name, 'x64', root)
+        else:
             continue
-        if source.exists():
-            if target.exists():
-                raise FileExistsError('Both old and new paths exist; no files replaced')
-            if hashes(source) != item['hashes']:
-                raise RuntimeError('Source changed after planning; no move performed')
+        if target.exists():
+            raise FileExistsError(f'Destination already exists: {target}')
+        if any(target == other or target in other.parents or other in target.parents
+               for _, other, _ in moves):
+            raise FileExistsError('Legacy outputs overlap; refusing to merge versions')
+        moves.append((source, target, hashes(source)))
+    return moves
+
+
+def migrate(root=ROOT, apply=False):
+    root = Path(root).resolve()
+    moves = plan(root)
+    for source, target, expected in moves:
+        print(f'{source.relative_to(root)} -> {target.relative_to(root)}')
+        if apply:
+            if target.exists() or hashes(source) != expected:
+                raise RuntimeError('Output changed after planning; no files replaced')
             target.parent.mkdir(parents=True, exist_ok=True)
             source.rename(target)
-        if not target.exists() or hashes(target) != item['hashes']:
-            raise RuntimeError('Moved output failed integrity verification')
-        item['moved'] = True
-        save(plan)
-    if apply:
-        print(f'Organized {len(plan)} outputs; every file hash preserved.')
+            if hashes(target) != expected:
+                raise RuntimeError('Moved output failed integrity verification')
+    print(f'{"Moved" if apply else "Planned"} {len(moves)} Windows release outputs.')
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true')
-    main(parser.parse_args().apply)
+    migrate(apply=parser.parse_args().apply)

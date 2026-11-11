@@ -12,14 +12,16 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tools'))
+from release_layout import release_dir
+
 SOURCE = ROOT
-PACKAGES = ROOT / 'dist'
 VERSION = os.environ.get('MH_PACKAGE_VERSION', '1.5.1-mh.6-controller-test')
 if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]*', VERSION):
     raise ValueError('Invalid package version')
 PROFILE = os.environ.get('MH_CONTROLLER_PROFILE_PATH')
 NAME = f'MH-{VERSION}-windows-x64'
-RELEASE = PACKAGES / VERSION
+RELEASE = release_dir('windows', VERSION, 'x64')
 DIST = RELEASE / 'unpacked'
 
 
