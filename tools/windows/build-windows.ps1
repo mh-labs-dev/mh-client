@@ -32,7 +32,7 @@ try {
             & python "$PSScriptRoot/../prepare-dart-paths.py"
             Assert-Build
             $symbolDirectory = Join-Path $projectRoot ('.local/debug-symbols/windows/' + [guid]::NewGuid().ToString('N'))
-            & flutter build windows --no-pub --release --obfuscate "--split-debug-info=$symbolDirectory" --dart-define=MH_DESKTOP=true "--dart-define=MH_CONTROLLER=$controllerFlag"
+            & flutter build windows --no-pub --release "--split-debug-info=$symbolDirectory" --dart-define=MH_DESKTOP=true "--dart-define=MH_CONTROLLER=$controllerFlag"
             Assert-Build
             @{ directory = $symbolDirectory } | ConvertTo-Json | Set-Content -Encoding UTF8 "$projectRoot/.local/debug-symbols/windows/latest.json"
         } finally { Pop-Location }
