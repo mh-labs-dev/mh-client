@@ -22,11 +22,11 @@ def verify(release):
     download = release
     release = ROOT / '.local/windows-builds' / download.relative_to(ROOT / 'release/windows')
     download_record = json.loads((release / 'download.json').read_text('utf-8'))
-    zip_path = download / download_record['name']
-    if sorted(p.name for p in download.iterdir()) != [zip_path.name]:
-        raise ValueError('Download directory must contain only one ZIP')
-    if sha(zip_path.read_bytes()) != download_record['sha256']:
-        raise ValueError('Download ZIP checksum mismatch')
+    exe_path = download / download_record['name']
+    if exe_path.suffix != '.exe' or sorted(p.name for p in download.iterdir()) != [exe_path.name]:
+        raise ValueError('Download directory must contain only one EXE')
+    if sha(exe_path.read_bytes()) != download_record['sha256']:
+        raise ValueError('Download EXE checksum mismatch')
     checksum_files = list(release.glob('*-sha256.json'))
     if len(checksum_files) != 1:
         raise ValueError('Expected one checksum manifest')
@@ -54,11 +54,10 @@ def verify(release):
     if b'.trycloudflare.com' in native:
         raise ValueError('Native library contains an obsolete temporary tunnel')
     portable = (release / manifest['portable_exe']['name']).read_bytes()
-    with zipfile.ZipFile(zip_path) as archive:
-        if sorted(archive.namelist()) != ['LICENSE.txt', 'MH.exe'] or archive.testzip() is not None:
-            raise ValueError('Customer ZIP must contain only MH.exe and LICENSE.txt')
-        if archive.read('MH.exe') != portable or archive.read('LICENSE.txt') != (ROOT / 'LICENCE').read_bytes():
-            raise ValueError('Customer ZIP content mismatch')
+    if exe_path.read_bytes() != portable:
+        raise ValueError('Download EXE differs from verified portable application')
+    if (unpacked / 'LICENSE.txt').read_bytes() != (ROOT / 'LICENCE').read_bytes():
+        raise ValueError('Embedded license differs from repository license')
     if not portable.startswith(b'MZ'):
         raise ValueError('Portable executable is not a Windows PE file')
     # The packer embeds this exact payload. Verify every decompressed member.

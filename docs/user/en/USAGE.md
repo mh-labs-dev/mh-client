@@ -1,6 +1,6 @@
 # Using MH
 
-1. On Windows, download and extract the ZIP, then open MH.exe.
+1. On Windows, download the EXE and double-click it.
 2. Log in with your assigned Pro Server account.
 3. Select your Mac and click its connection button.
 4. Enter the Mac's remote-access password when prompted.

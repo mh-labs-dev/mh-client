@@ -1,4 +1,4 @@
-"""Create one customer ZIP; retain build and source records locally."""
+"""Create one customer EXE; retain build and source records locally."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -115,20 +115,18 @@ def finalize():
     (RELEASE / 'SHA256SUMS.txt').write_text(
         ''.join(f'{value}  {name}\n' for name, value in checksums.items()), encoding='utf-8')
     (RELEASE / (NAME + '-sha256.json')).write_text(json.dumps(checksums, indent=2), encoding='utf-8')
-    print(json.dumps({'download': str(DOWNLOAD / (NAME + '.zip')), 'files': len(files)}))
+    print(json.dumps({'download': str(DOWNLOAD / (NAME + '.exe')), 'files': len(files)}))
 
 
 def write_download():
     DOWNLOAD.mkdir(parents=True, exist_ok=True)
-    zip_path = DOWNLOAD / (NAME + '.zip')
-    if zip_path.exists():
-        raise FileExistsError('Download ZIP already exists')
+    exe_path = DOWNLOAD / (NAME + '.exe')
+    if exe_path.exists():
+        raise FileExistsError('Download EXE already exists')
     shutil.copy2(SOURCE / 'LICENCE', RELEASE / 'LICENSE.txt')
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        archive.write(RELEASE / (NAME + '.exe'), 'MH.exe')
-        archive.write(RELEASE / 'LICENSE.txt', 'LICENSE.txt')
+    shutil.copy2(RELEASE / (NAME + '.exe'), exe_path)
     (RELEASE / 'download.json').write_text(json.dumps(
-        {'name': zip_path.name, 'sha256': digest(zip_path)}, indent=2), encoding='utf-8')
+        {'name': exe_path.name, 'sha256': digest(exe_path)}, indent=2), encoding='utf-8')
 
 
 

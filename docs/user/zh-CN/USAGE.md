@@ -1,6 +1,6 @@
 # 使用 MH
 
-1. 在 Windows 上下载并解压 ZIP，然后打开 MH.exe。
+1. 在 Windows 上下载 EXE，双击运行。
 2. 使用分配的 Pro Server 账号登录。
 3. 选择 Mac，点击连接按钮。
 4. 按提示输入 Mac 的远控密码。
