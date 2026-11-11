@@ -13,6 +13,8 @@ import subprocess
 import sys
 import zipfile
 
+from controller_profile import validate_profile
+
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_DIRS = {'.local', '.cache', 'target', 'dist', '__pycache__', '.venv', '.agents', '.codex', '.claude', '.gemini', '.cursor', '.windsurf'}
 LOCAL_NAMES = {'agents.md', 'agents.local.md', 'claude.md', 'claude.local.md', 'gemini.md', '.cursorrules', '.windsurfrules', 'copilot-instructions.md', 'progress.md', 'controller-profile.json', 'devices.json', 'credentials.json', 'secrets.json'}
@@ -53,6 +55,11 @@ def rules_for(path, data, approved, artifact=False):
     name = parts[-1].lower() if parts else ''
     suffix = PurePosixPath(name).suffix
     rules = []
+    if normalized == 'config/controller.default.json':
+        try:
+            validate_profile(json.loads(data.decode('utf-8-sig')))
+        except (ValueError, TypeError, UnicodeError):
+            rules.append('invalid public controller profile')
     if (any(p.lower() in LOCAL_DIRS or p.lower() == '.git' for p in parts) or name in LOCAL_NAMES
             or normalized.lower().startswith(('.github/instructions/', 'docs/development/', 'docs/upstream/')) or '/.github/instructions/' in normalized.lower()
             or suffix in PRIVATE_SUFFIXES or name in ('id_rsa', 'id_ed25519')

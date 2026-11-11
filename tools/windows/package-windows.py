@@ -66,7 +66,7 @@ def stage():
 
 def source_bundle(output):
     with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        if PROFILE:
+        if PROFILE and Path(PROFILE).resolve() != (ROOT / 'config/controller.default.json').resolve():
             archive.write(PROFILE, 'controller-profile.json')
         included = set()
         for base in (SOURCE, SOURCE / 'libs/hbb_common'):

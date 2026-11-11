@@ -14,11 +14,11 @@ Rust 1.81.0、Flutter 3.24.5、固定 vcpkg 和 NASM 2.16.03 放在项目忽略�
 python3 tools/macos/build-macos.py --version 1.5.1-mh.9-controller-preview
 ```
 
-可登录的控制端使用公开服务配置，不包含账号密码：
+可登录的控制端使用仓库中的公开默认服务配置：
 
 ```sh
-python3 tools/controller_profile.py validate .local/controller-profile.json
-python3 tools/macos/build-macos.py --version 1.5.1-mh.9-controller-test --controller-profile .local/controller-profile.json
+python3 tools/controller_profile.py validate config/controller.default.json
+python3 tools/macos/build-macos.py --version 1.5.1-mh.10-controller-test --controller-profile config/controller.default.json
 ```
 
 脚本构建 Rust 动态库、辅助服务和 Flutter/Xcode 应用，生成 MH 原生图标，随后打包到 `release/macos/<版本>/<架构>/`。已有版本不会覆盖；更换配置时重新执行完整构建。

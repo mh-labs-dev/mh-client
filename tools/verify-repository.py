@@ -36,7 +36,7 @@ def main():
     for path in visible:
         check(not path.startswith(('.local/', '.cache/', 'dist/', 'target/')), f'Local output visible to Git: {path}')
     required = ['README.md', 'docs/user/en/README.md', 'LICENCE', 'upstream.json',
-                'branding/mh-icon.png', 'config/controller.example.json',
+                'branding/mh-icon.png', 'config/controller.example.json', 'config/controller.default.json',
                 'tools/windows/bridge/bridge-upstream.zip', 'tools/windows/build-windows.ps1',
                 'tools/windows/package-windows.ps1']
     required += [f'docs/user/{lang}/USAGE.md' for lang in ('zh-CN', 'en')]

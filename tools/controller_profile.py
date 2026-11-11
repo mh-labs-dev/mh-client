@@ -9,8 +9,11 @@ KEYS = {'custom-rendezvous-server', 'relay-server', 'api-server', 'key',
 
 
 def validate(path):
-    profile = json.loads(Path(path).read_text(encoding='utf-8-sig'))
-    if set(profile) != KEYS or any(not isinstance(v, str) for v in profile.values()):
+    return validate_profile(json.loads(Path(path).read_text(encoding='utf-8-sig')))
+
+
+def validate_profile(profile):
+    if not isinstance(profile, dict) or set(profile) != KEYS or any(not isinstance(v, str) for v in profile.values()):
         raise ValueError('Only the six public connection settings are allowed')
     url = urlparse(profile['api-server'])
     if (url.scheme != 'https' or not url.hostname or url.username or url.password

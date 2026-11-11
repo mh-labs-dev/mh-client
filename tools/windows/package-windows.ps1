@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$Version, [string]$ControllerProfile)
+param([Parameter(Mandatory=$true)][string]$Version, [string]$ControllerProfile = (Join-Path $PSScriptRoot '../../config/controller.default.json'))
 . "$PSScriptRoot/windows-env.ps1"
 $env:MH_PACKAGE_VERSION = $Version
 Remove-Item Env:MH_CONTROLLER_PROFILE_PATH -ErrorAction SilentlyContinue

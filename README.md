@@ -30,21 +30,28 @@ python tools/windows/prepare-bridge.py
 python tools/windows/prepare-branding.py
 python tools/windows/prefetch-msys.py
 ./tools/windows/prepare-native.ps1
-New-Item -ItemType Directory -Force .local
-Copy-Item config/controller.example.json .local/controller-profile.json
 ```
 
-编辑 `.local/controller-profile.json`，将示例域名和全零公钥替换为实际公开服务配置。模板针对同域名的 HTTPS API 和 WebSocket 信令/中继入口；保留 `allow-websocket=Y`、`allow-insecure-tls-fallback=N`。
+构建默认读取 [config/controller.default.json](config/controller.default.json)，预置 MH 的固定服务地址、服务器公钥和安全 WebSocket 设置。该配置随源码维护，客户端中的服务器设置仍可修改。
 
 然后校验配置、编译并打包：
 
 ```powershell
-python tools/windows/controller-profile.py validate .local/controller-profile.json
-./tools/windows/build-windows.ps1 -ControllerProfile .local/controller-profile.json
-./tools/windows/package-windows.ps1 -Version 1.5.1-mh.6-controller-test -ControllerProfile .local/controller-profile.json
+python tools/controller_profile.py validate config/controller.default.json
+./tools/windows/build-windows.ps1
+./tools/windows/package-windows.ps1 -Version 1.5.1-mh.6-controller-test
 ```
 
-版本号仅为示例。产物位于 `release/windows/<版本号>/x64/`。`-ControllerProfile` 启用登录优先的控制端；修改配置或切换变体时完整重建。
+版本号仅为示例。产物位于 `release/windows/<版本号>/x64/`。默认构建为登录优先的控制端；修改配置或切换变体时完整重建。
+
+自定义服务可从 `config/controller.example.json` 复制到 `.local/controller-profile.json`，在 Windows 构建和打包时传入相同的 `-ControllerProfile` 路径。显式传入 `-ControllerProfile ''` 可构建通用 MH 变体。客户端已保存的网络设置优先于构建默认值。
+
+macOS 准备依赖后，使用同一公开默认配置构建：
+
+```sh
+python3 tools/controller_profile.py validate config/controller.default.json
+python3 tools/macos/build-macos.py --version 1.5.1-mh.10-controller-test --controller-profile config/controller.default.json
+```
 
 ## Windows / macOS 共享的 MH 功能
 
@@ -73,6 +80,6 @@ macOS 构建入口固定使用纯控制端模式；尚无服务配置时显示�
 | `flutter/` | 界面及各平台工程 |
 | `res/`、`branding/` | 程序资源与 MH 品牌素材 |
 | `tools/` | 构建、打包、检查工具及测试 |
-| `config/` | 公开配置模板 |
+| `config/` | 默认公开连接配置与自定义模板 |
 | `docs/user/` | 使用说明、英文首页与版本说明 |
 

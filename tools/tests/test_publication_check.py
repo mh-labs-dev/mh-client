@@ -10,6 +10,7 @@ import zipfile
 
 TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
+sys.path.insert(0, str(TOOLS))
 spec = importlib.util.spec_from_file_location('publication_check', TOOLS/'publication_check.py')
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
@@ -21,7 +22,7 @@ class PublicationTests(unittest.TestCase):
         subprocess.run(['git','init','-q',str(root)],check=True)
         (root/'tools').mkdir()
         (root/'.githooks').mkdir()
-        for name in ('publication_check.py','publication-exceptions.json'):
+        for name in ('publication_check.py','publication-exceptions.json','controller_profile.py'):
             shutil.copy2(TOOLS/name,root/'tools'/name)
         shutil.copy2(ROOT/'.githooks/pre-commit',root/'.githooks/pre-commit')
         (root/'.githooks/pre-commit').chmod(0o755)
@@ -89,6 +90,15 @@ class PublicationTests(unittest.TestCase):
         self.assertIn('local/private file',checker.rules_for('license.env',b'',approved))
         self.assertIn('local/private file',checker.rules_for('02-账号与密码.txt',b'',approved))
         self.assertIn('credential in URL',checker.rules_for('config/service.json',b'https://'+b'user:opaque-secret@service.example',approved))
+
+    def test_public_default_allows_connection_settings_but_rejects_extra_fields(self):
+        data = (ROOT/'config/controller.default.json').read_bytes()
+        self.assertEqual(checker.rules_for('config/controller.default.json', data, {}), [])
+        profile = json.loads(data)
+        profile['credential'] = 'private-value'
+        result = checker.rules_for('config/controller.default.json', json.dumps(profile).encode(), {})
+        self.assertIn('invalid public controller profile', result)
+        self.assertIn('local/private file', checker.rules_for('.local/controller-profile.json', data, {}))
 
     def test_source_zip_profile_is_blocked_without_displaying_its_host(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('native','ui','all')][string]$Stage = 'all', [string]$ControllerProfile)
+param([ValidateSet('native','ui','all')][string]$Stage = 'all', [string]$ControllerProfile = (Join-Path $PSScriptRoot '../../config/controller.default.json'))
 . "$PSScriptRoot/windows-env.ps1"
 $sourceRoot = $projectRoot
 $controllerFlag = if ($ControllerProfile) { 'true' } else { 'false' }

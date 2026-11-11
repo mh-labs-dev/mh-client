@@ -1,0 +1,8 @@
+{
+  "custom-rendezvous-server": "connect.mh-labs.net",
+  "relay-server": "connect.mh-labs.net",
+  "api-server": "https://connect.mh-labs.net",
+  "key": "hUaLppWL0ZTylWS5gVJv5Cx0yzX8cdd6qGtTOXjoW6Q=",
+  "allow-websocket": "Y",
+  "allow-insecure-tls-fallback": "N"
+}
