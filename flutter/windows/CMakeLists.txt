@@ -41,6 +41,13 @@ foreach(CompilerFlag ${CompilerFlags})
   string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
 endforeach()
 
+# Keep source locations in release diagnostics relative to this repository.
+if(MSVC)
+  get_filename_component(MH_SOURCE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+  file(TO_NATIVE_PATH "${MH_SOURCE_ROOT}/" MH_SOURCE_PREFIX)
+  add_compile_options("$<$<CONFIG:Release>:/d1trimfile:${MH_SOURCE_PREFIX}>")
+endif()
+
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
