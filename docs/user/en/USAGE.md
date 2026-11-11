@@ -1,14 +1,12 @@
-# Windows usage
+# Using MH
 
-1. Run the portable EXE, or extract the complete program ZIP and run MH.exe.
-2. Log in with your assigned ordinary Pro Server account.
-3. Select a Mac and use its connection button.
-4. At Password required, enter the remote-device password.
-5. If macOS is locked, select the assigned local account and enter its password.
-6. Save your work and disconnect using the remote-session toolbar.
+1. On Windows, download and extract the ZIP, then open MH.exe.
+2. Log in with your assigned Pro Server account.
+3. Select your Mac and click its connection button.
+4. Enter the Mac's remote-access password when prompted.
+5. If macOS shows a lock screen, sign in to the assigned local account.
+6. Save your work and close the remote session when finished.
 
-The preview is unsigned. Ask the provider to verify the file and checksum if Windows blocks it. Keep DLLs and the data folder beside the executable in directory distributions. The portable EXE already embeds them.
+Server addresses and the public key are available under Settings → Network. Saved settings take precedence over the defaults bundled with a new version. Keep WebSocket enabled for the default service.
 
-Network settings remain editable. An expired temporary endpoint needs replacement even when credentials are correct. Distinguish account login, offline-device, relay and device-password errors; report the time and network type without passwords. A listed device is not necessarily online.
-
-Keep each release in its own folder for rollback. Automatic updates, service installation and uninstall behavior are not validated in this preview.
+For connection issues, provide the error message, time and network type to the service operator. Keep account and device passwords private.

@@ -1,22 +1,22 @@
 # MH
 
-[中文](README.md) · [English](docs/user/en/README.md)
+[English](README.md) · [简体中文](docs/user/zh-CN/README.md)
 
-MH 是基于 [RustDesk 1.5.1](https://github.com/rustdesk/rustdesk) 修改的远程 Mac 控制端，采用 [AGPL-3.0 许可](LICENCE)。
+MH is a remote Mac controller modified from [RustDesk 1.5.1](https://github.com/rustdesk/rustdesk), licensed under [AGPL-3.0](LICENCE).
 
-Windows 版本提供账号登录、设备列表和连接入口。连接需要可用的 Pro Server、已接入的 Mac 和相应权限；服务端独立部署。Windows x64 已有预览版；macOS arm64 支持本地纯控制端预览构建，实际服务连接仍需配置与验证。
+MH provides account login, a Mac device list and remote desktop connections. Windows x64 and macOS arm64 builds use the same controller interface. Access requires an account and an assigned Mac on a Pro Server.
 
-[使用说明](docs/user/zh-CN/USAGE.md) · [版本说明](docs/user/releases/1.5.1-mh.5-controller-test.md)
+[Usage](docs/user/en/USAGE.md) · [Release notes](docs/user/releases/1.5.1-mh.10-preview.md) · [macOS build](tools/macos/README.md)
 
 ## Dependencies
 
-- Windows x64、Git、Python 3.12。
-- Visual Studio 2022：桌面 C++ 工作负载和 Windows SDK；CMake 可从 PATH 调用。
-- Rust 1.75.0、Flutter 3.24.5、固定 vcpkg 和 libclang 15.0.6.1，由下列脚本准备。
+- Windows x64, Git and Python 3.12.
+- Visual Studio 2022 with Desktop development with C++ and the Windows SDK; CMake available on PATH.
+- Rust 1.75.0, Flutter 3.24.5, pinned vcpkg and libclang 15.0.6.1, prepared by the scripts below.
 
 ## Build
 
-在仓库根目录使用 PowerShell，首次构建先准备依赖：
+Run PowerShell from the repository root. Prepare dependencies for the first build:
 
 ```powershell
 git submodule update --init --recursive
@@ -32,54 +32,35 @@ python tools/windows/prefetch-msys.py
 ./tools/windows/prepare-native.ps1
 ```
 
-构建默认读取 [config/controller.default.json](config/controller.default.json)，预置 MH 的固定服务地址、服务器公钥和安全 WebSocket 设置。该配置随源码维护，客户端中的服务器设置仍可修改。
+Builds use [config/controller.default.json](config/controller.default.json) for the MH service addresses, server public key and secure WebSocket settings. This public configuration is maintained with the source. Server settings remain editable in the client.
 
-然后校验配置、编译并打包：
+Validate, build and package:
 
 ```powershell
 python tools/controller_profile.py validate config/controller.default.json
 ./tools/windows/build-windows.ps1
-./tools/windows/package-windows.ps1 -Version 1.5.1-mh.6-controller-test
+./tools/windows/package-windows.ps1 -Version 1.5.1-mh.10-preview
 ```
 
-版本号仅为示例。产物位于 `release/windows/<版本号>/x64/`。默认构建为登录优先的控制端；修改配置或切换变体时完整重建。
+The version number is an example. Output is stored in `release/windows/<version>/x64/`. Builds default to the login-first controller. Rebuild both native code and UI when changing configuration or variants.
 
-自定义服务可从 `config/controller.example.json` 复制到 `.local/controller-profile.json`，在 Windows 构建和打包时传入相同的 `-ControllerProfile` 路径。显式传入 `-ControllerProfile ''` 可构建通用 MH 变体。客户端已保存的网络设置优先于构建默认值。
+For a custom service, copy `config/controller.example.json` to `.local/controller-profile.json` and pass the same `-ControllerProfile` path to both Windows build and packaging commands. Pass `-ControllerProfile ''` explicitly to build the general MH variant. Saved client network settings take precedence over build defaults.
 
-macOS 准备依赖后，使用同一公开默认配置构建：
+To build macOS with the same public defaults, use the macOS build script after preparing its dependencies:
 
 ```sh
 python3 tools/controller_profile.py validate config/controller.default.json
-python3 tools/macos/build-macos.py --version 1.5.1-mh.10-controller-test --controller-profile config/controller.default.json
+python3 tools/macos/build-macos.py --version 1.5.1-mh.10-preview --controller-profile config/controller.default.json
 ```
-
-## Windows / macOS 共享的 MH 功能
-
-MH 的名称、控制端默认配置和 WebSocket 中继选择位于 `src/mh/`，在 Windows 和 macOS 的同一初始化入口调用。两平台复用 Flutter 中的 MH 配色、图标、登录和设备列表页面；iOS、Android 和 Linux 未接入这套原生初始化。
-
-构建时须同时配置 Rust 和 Flutter，不能只切换界面：
-
-| 构建输入 | 含义 |
-|---|---|
-| Flutter `--dart-define=MH_DESKTOP=true` | 启用共享的 MH 桌面外观；旧参数 `MH_WINDOWS=true` 仍兼容 |
-| Flutter `--dart-define=MH_CONTROLLER=true` | 在 MH 外观下启用登录和设备列表首页；普通 MH 构建使用 `false` |
-| Flutter `--dart-define=MH_CONTROLLER_CONFIGURED=false` | 未配置服务的预览禁用登录；已有 Windows 构建默认保持可登录 |
-| Rust 环境变量 `MH_CONTROLLER=true` | 启用仅主动连接模式，与服务器配置是否就绪分开 |
-| Rust 环境变量 `MH_CONTROLLER_PROFILE` | 控制端的公开配置 JSON 内容；普通 MH 构建需取消该变量 |
-
-Windows 构建脚本会继续成对设置这些输入。控制端保留 `MH Test` 配置名称、仅主动连接及禁用 TCP 监听的行为；普通 MH 构建保留 `MH` 名称。共享校验入口为 `python tools/controller_profile.py validate <配置路径>`，原 Windows 校验命令仍可使用。
-
-macOS 构建入口固定使用纯控制端模式；尚无服务配置时显示待配置登录页，不显示本机 ID、临时密码或被控权限。macOS 本地测试包构建见 [macOS 构建说明](tools/macos/README.md)。各平台产物统一存放在 [release](release/README.md)；iOS、Android 目前仅预留目录。
 
 ## File structure
 
-| 目录 | 内容 |
+| Directory | Contents |
 |---|---|
-| `src/` | Rust 核心与平台实现 |
-| `libs/` | 采集、输入、剪贴板等功能库 |
-| `flutter/` | 界面及各平台工程 |
-| `res/`、`branding/` | 程序资源与 MH 品牌素材 |
-| `tools/` | 构建、打包、检查工具及测试 |
-| `config/` | 默认公开连接配置与自定义模板 |
-| `docs/user/` | 使用说明、英文首页与版本说明 |
-
+| `src/` | Rust core and platform implementations |
+| `libs/` | Capture, input, clipboard and other libraries |
+| `flutter/` | UI and platform projects |
+| `res/`, `branding/` | Application resources and MH assets |
+| `tools/` | Build, packaging, inspection tools and tests |
+| `config/` | Public connection defaults and custom configuration template |
+| `docs/user/` | Usage, translated homepage and release notes |

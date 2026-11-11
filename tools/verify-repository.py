@@ -35,7 +35,7 @@ def main():
     visible = set(git('ls-files', '--cached', '--others', '--exclude-standard', '-z').split('\0'))
     for path in visible:
         check(not path.startswith(('.local/', '.cache/', 'dist/', 'target/')), f'Local output visible to Git: {path}')
-    required = ['README.md', 'docs/user/en/README.md', 'LICENCE', 'upstream.json',
+    required = ['README.md', 'docs/user/zh-CN/README.md', 'LICENCE', 'upstream.json',
                 'branding/mh-icon.png', 'config/controller.example.json', 'config/controller.default.json',
                 'tools/windows/bridge/bridge-upstream.zip', 'tools/windows/build-windows.ps1',
                 'tools/windows/package-windows.ps1']
@@ -62,6 +62,7 @@ def main():
     release_files = 0
     manifests = list((ROOT / 'dist').glob('*/*-sha256.json'))
     manifests += list((ROOT / 'release').glob('*/*/*/*-sha256.json'))
+    manifests += list((ROOT / '.local/windows-builds').glob('*/*/*-sha256.json'))
     for manifest in manifests:
         checksums = json.loads(manifest.read_text(encoding='utf-8'))
         for name, expected in checksums.items():

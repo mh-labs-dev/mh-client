@@ -1,4 +1,4 @@
-"""Stage the Windows build and create an auditable portable/source bundle."""
+"""Create one customer ZIP; retain build and source records locally."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -21,7 +21,8 @@ if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]*', VERSION):
     raise ValueError('Invalid package version')
 PROFILE = os.environ.get('MH_CONTROLLER_PROFILE_PATH')
 NAME = f'MH-{VERSION}-windows-x64'
-RELEASE = release_dir('windows', VERSION, 'x64')
+DOWNLOAD = release_dir('windows', VERSION, 'x64')
+RELEASE = ROOT / '.local/windows-builds' / VERSION / 'x64'
 DIST = RELEASE / 'unpacked'
 
 
@@ -39,28 +40,18 @@ def stage():
                  'dylib_virtual_display.dll', 'data/app.so'):
         if not (release / name).is_file():
             raise FileNotFoundError(f'Missing build output: {name}')
-    if RELEASE.exists():
+    if RELEASE.exists() or DOWNLOAD.exists():
         raise FileExistsError('Version directory already exists; select a new version without overwriting history')
     RELEASE.mkdir(parents=True)
     shutil.copytree(release, DIST, ignore=shutil.ignore_patterns('*.pdb', '*.lib', '*.exp'))
     shutil.copy2(SOURCE / 'LICENCE', DIST / 'LICENSE.txt')
-    (DIST / 'README.txt').write_text(
-        'MH Windows x64 preview — based on RustDesk 1.5.1\n\n'
-        'Run MH.exe. This build is unsigned. Keep the entire extracted folder together.\n'
-        'Configure your ID server, relay, API URL and server public key in Network settings.\n'
-        'Server addresses, account passwords and trial licenses are not embedded in this package.\n'
-        'MH uses its own application configuration. Upstream RustDesk is not overwritten.\n'
-        'Virtual display and printer driver installers are not bundled.\n'
-        'Source: the accompanying MH source archive. Upstream copyright and AGPL license are retained.\n',
-        encoding='utf-8')
+    instructions = ('MH for Windows\n\nRun MH.exe. Keep the application folder intact.\n'
+                    'Server settings are available under Settings > Network.\n')
     if PROFILE:
-        (DIST / 'README.txt').write_text(
-            'MH Windows 控制端预览\n\n打开 MH.exe，使用 Pro Server 普通账号登录，然后选择 Mac 并点击连接。\n'
-            '服务地址与服务器公钥可在设置 > 网络中修改。连接需要有效服务与设备权限。\n'
-            '远控密码认证保持原流程。设备接入、分配及权限由管理员另行完成。\n'
-            '应用配置保存在独立的 MH Test 目录。\n'
-            '本包未签名，不自动安装服务；不包含账号密码、许可证或服务器私钥。\n'
-            '保留上游版权与 AGPL 许可，修改后的对应源码随同提供。\n', encoding='utf-8')
+        instructions += 'Log in with your assigned account, select a Mac and connect.\n'
+    instructions += ('Enter the device password when prompted.\n'
+                     'License: LICENSE.txt. Source: https://github.com/mh-labs-dev/mh-client\n')
+    (DIST / 'README.txt').write_text(instructions, encoding='utf-8')
     print(DIST)
 
 
@@ -118,14 +109,27 @@ def finalize():
         'files': files,
     }
     (DIST / 'build-manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
-    zip_path = RELEASE / (NAME + '.zip')
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for file in sorted(DIST.rglob('*')):
-            if file.is_file():
-                archive.write(file, NAME + '/' + file.relative_to(DIST).as_posix())
-    checksums = {p.name: digest(p) for p in (output_exe, zip_path, source_zip)}
+    write_download()
+    checksums = {p.name: digest(p) for p in (output_exe, source_zip)}
+    checksums['LICENSE.txt'] = digest(RELEASE / 'LICENSE.txt')
+    (RELEASE / 'SHA256SUMS.txt').write_text(
+        ''.join(f'{value}  {name}\n' for name, value in checksums.items()), encoding='utf-8')
     (RELEASE / (NAME + '-sha256.json')).write_text(json.dumps(checksums, indent=2), encoding='utf-8')
-    print(json.dumps({'artifacts': list(checksums), 'files': len(files)}))
+    print(json.dumps({'download': str(DOWNLOAD / (NAME + '.zip')), 'files': len(files)}))
+
+
+def write_download():
+    DOWNLOAD.mkdir(parents=True, exist_ok=True)
+    zip_path = DOWNLOAD / (NAME + '.zip')
+    if zip_path.exists():
+        raise FileExistsError('Download ZIP already exists')
+    shutil.copy2(SOURCE / 'LICENCE', RELEASE / 'LICENSE.txt')
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        archive.write(RELEASE / (NAME + '.exe'), 'MH.exe')
+        archive.write(RELEASE / 'LICENSE.txt', 'LICENSE.txt')
+    (RELEASE / 'download.json').write_text(json.dumps(
+        {'name': zip_path.name, 'sha256': digest(zip_path)}, indent=2), encoding='utf-8')
+
 
 
 if __name__ == '__main__':
